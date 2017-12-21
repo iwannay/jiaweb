@@ -1,4 +1,4 @@
-package express
+package jiaweb
 
 import (
 	"fmt"
@@ -24,8 +24,8 @@ type (
 	Node struct {
 		Path       string
 		NodeType   int
-		hander     HandlerFunc
-		middleware []MiddlewareIf
+		hander     RouteHandle
+		middleware []Middleware
 		Children   []*Node
 		Params     Params
 		reg        *regexp.Regexp
@@ -46,24 +46,32 @@ func NewTree() *Node {
 }
 
 // Use 添加中间件
-func (n *Node) Use(m ...MiddlewareIf) *Node {
+func (n *Node) Use(m ...Middleware) *Node {
 	if len(m) < 0 {
 		return n
 	}
+
+	step := len(n.middleware) - 1
+
 	for _, v := range m {
 		if v != nil {
+			if step >= 0 {
+				n.middleware[step].SetNext(v)
+			}
 			n.middleware = append(n.middleware, v)
+			step++
 		}
 	}
 	return n
 
 }
 
-func (n *Node) insertChild(path string, handler HandlerFunc) {
+func (n *Node) insertChild(path string, handler RouteHandle, m ...Middleware) {
 
 	// fullpath := path
 	var paramsCheck uint8
 	var paramStartPos int
+	var newChild *Node
 
 	if handler == nil {
 		panic("[route] handler function cannot be nil")
@@ -121,21 +129,26 @@ walk:
 
 			// 检查插入的path新结点是否包含参数
 			if has, reg, params := parseParam(path[i:]); has {
-				n.Children = []*Node{&child, &Node{
+
+				newChild = &Node{
 					Path:     path[i:],
 					NodeType: nodeTypeParam,
 					hander:   handler,
 					Params:   params,
 					reg:      reg,
-				}}
+				}
+				newChild.Use(m...)
+				n.Children = []*Node{&child, newChild}
 				return
 			}
 
-			n.Children = []*Node{&child, &Node{
+			newChild = &Node{
 				Path:     path[i:],
 				NodeType: nodeTypeStatic,
 				hander:   handler,
-			}}
+			}
+			newChild.Use(m...)
+			n.Children = []*Node{&child, newChild}
 
 		} else {
 
@@ -177,30 +190,44 @@ walk:
 
 			if path == "" {
 				n.hander = handler
+				n.Use(m...)
 				// panic("[route] " + fullpath + " already exists")
 				return
 			}
 
 			if has, reg, params := parseParam(path); has {
-				n.Children = append(n.Children, &Node{
+				newChild = &Node{
 					Path:     path,
 					reg:      reg,
 					NodeType: nodeTypeParam,
 					hander:   handler,
 					Params:   params,
-				})
+				}
+				newChild.Use(m...)
+				n.Children = append(n.Children, newChild)
 				return
 			}
-			n.Children = append(n.Children, &Node{
+
+			newChild = &Node{
 				Path:     path,
 				NodeType: nodeTypeStatic,
 				hander:   handler,
-			})
+			}
+			newChild.Use(m...)
+			n.Children = append(n.Children, newChild)
 
 		}
 		return
 	}
 
+}
+
+func (n *Node) Middlewares() []Middleware {
+	return n.middleware
+}
+
+func (n *Node) Node() *Node {
+	return n
 }
 
 func (n *Node) getNode(path string) (node *Node, paramsValue map[string]string, fullPath string) {
@@ -313,11 +340,13 @@ func (n *Node) getNode(path string) (node *Node, paramsValue map[string]string, 
 
 }
 
-func (n *Node) GetNode(path string) (node *Node, paramsValue map[string]string, fullPath string) {
-	return n.getNode(path)
+func (n *Node) GetValue(path string) (handle RouteHandle, paramsValue map[string]string) {
+	node, params, _ := n.getNode(path)
+
+	return node.hander, params
 }
 
-func (n *Node) Middleware() []MiddlewareIf {
+func (n *Node) Middleware() []Middleware {
 	return n.middleware
 }
 

@@ -1,7 +1,0 @@
-package express
-
-type (
-	server{
-		
-	}
-)

@@ -1,8 +1,7 @@
 package config
 
 import (
-	"encoding/json"
-	"fmt"
+	"errors"
 	"io/ioutil"
 
 	"github.com/iwannay/jiaweb/utils/file"
@@ -10,110 +9,68 @@ import (
 
 type (
 	Config struct {
-		App     *AppConfig
-		Session *SessionConfig
-		Route   *RouteConfig
-		Group   *GroupConfig
+		App    *AppNode
+		Server *ServerNode
+	}
+	AppNode struct {
+		Version string
+		RunMode string
 	}
 
-	AppConfig struct {
-		LogPath     string
-		EnableLog   bool
-		RunMode     string
-		PprofPort   int
-		EnablePprof bool
-	}
-
-	SessionConfig struct {
-	}
-
-	RouteConfig struct {
-	}
-
-	GroupConfig struct {
+	ServerNode struct {
+		EnableListDir bool
 	}
 )
 
 const (
-	errorPrefix = "Jiaweb:config"
+	ConfigTypeJson = "json"
+	ConfigTypeXml  = "xml"
 )
 
-func defaultAppConfig() *AppConfig {
-	return &AppConfig{}
+func New() *Config {
+	return &Config{}
 }
 
-func defaultSessionConfig() *SessionConfig {
-	return &SessionConfig{}
-}
+func InitConfig(configFile string, configType string) (config *Config, err error) {
 
-func defaultRouteConfig() *RouteConfig {
-	return &RouteConfig{}
-}
-
-func defaultGroupConfig() *GroupConfig {
-	return &GroupConfig{}
-}
-
-// MustInitConfig 初始化配置文件否则panic
-func MustInitConfig(configfile string, configType string) *Config {
-	conf, err := InitConfig(configfile, configType)
-	if err != nil {
-		panic(err)
-	}
-	return conf
-}
-
-// InitConfig 初始化配置文件
-func InitConfig(configFile string, configType string) (*Config, error) {
+	realPath := configFile
 	if !file.Exist(configFile) {
-		configFile = file.GetCurrentDirectory() + "/" + configFile
-		if !file.Exist(configFile) {
-			configFile = file.GetCurrentDirectory() + "/config/" + configFile
-			if !file.Exist(configFile) {
-				return nil, fmt.Errorf("%s file %s not exists", errorPrefix, configFile)
+		realPath = file.GetCurrentDirectory() + "/" + configFile
+		if !file.Exist(realPath) {
+			realPath = file.GetCurrentDirectory() + "/config/" + configFile
+
+			if !file.Exist(realPath) {
+				return nil, errors.New("no exists config file " + configFile)
 			}
 		}
 	}
 
-	bytes, err := ioutil.ReadFile(configFile)
-	if err != nil {
-		return nil, fmt.Errorf("%s config file [%s] cannot parse %s", errorPrefix, configFile, err)
-	}
-
-	var config Config
-
-	switch configType {
-	case "json":
-		err = readFromJson(bytes, &config)
-	default:
-		err = readFromJson(bytes, &config)
-
+	if configType == ConfigTypeJson {
+		config, err = initConfig(realPath, configType, fromJson)
+	} else {
+		return nil, errors.New("config not support xml type file")
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("%s config file [%s] cannot parse %s", errorPrefix, configFile, err)
+		return config, err
 	}
 
-	if config.App == nil {
-		config.App = defaultAppConfig()
-	}
-
-	if config.Group == nil {
-		config.Group = defaultGroupConfig()
-	}
-
-	if config.Route == nil {
-		config.Route = defaultRouteConfig()
-	}
-
-	if config.Session == nil {
-		config.Session = defaultSessionConfig()
-	}
-
-	return &config, nil
+	return config, nil
 
 }
 
-func readFromJson(bytes []byte, v interface{}) error {
-	return json.Unmarshal(bytes, v)
+func initConfig(configFile string, configType string, f func([]byte, interface{}) error) (*Config, error) {
+	content, err := ioutil.ReadFile(configFile)
+	if err != nil {
+		return nil, errors.New("jiaweb:config:initconfig " + err.Error())
+	}
+
+	var config *Config
+	err = f(content, &config)
+	if err != nil {
+		return nil, errors.New("jiaweb:config:initconfig " + err.Error())
+	}
+
+	return config, nil
+
 }
