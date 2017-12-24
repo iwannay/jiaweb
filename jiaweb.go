@@ -41,14 +41,14 @@ const (
 )
 
 func New() *JiaWeb {
+	logger.InitJiaLog()
 	app := &JiaWeb{
 		HttpServer:  NewHttpServer(),
 		Config:      config.New(),
 		Middlewares: make([]Middleware, 0),
 	}
 	app.HttpServer.SetJiaWeb(app)
-	logger.InitJiaLog()
-
+	app.init()
 	return app
 }
 
@@ -57,6 +57,7 @@ func Classic() *JiaWeb {
 
 	app.SetEnableLog(true)
 	app.UseRequestLog()
+
 	logger.Logger().Debug("JiaWeb start New AppServer", LogTarget_HttpServer)
 
 	return app
@@ -162,16 +163,18 @@ func (app *JiaWeb) initInnnerRouter() {
 	inner.GET("/debug/query/<key:[^/]*>", showQuery)
 }
 
-func (app *JiaWeb) ListenAndServe(addr string) error {
+func (app *JiaWeb) init() {
 	app.initAppConfig()
 	app.initRegisterMiddleware()
 	app.initRegisterRoute()
 	app.initRegisterGroup()
 	app.initServerEnvironment()
 	app.initInnnerRouter()
+}
 
+func (app *JiaWeb) ListenAndServe(addr string) error {
+	app.Use(&xMiddleware{})
 	err := app.HttpServer.ListenAndServe(addr)
-
 	return err
 
 }
@@ -196,7 +199,6 @@ func (app *JiaWeb) initServerEnvironment() {
 
 	// TODO init render
 
-	app.Use(&xMiddleware{})
 	if app.Config.App.EnablePProf {
 		logger.Logger().Debug("JiaWeb:StartPProfServer["+strconv.Itoa(app.Config.App.PProfPort)+"] Begin", LogTarget_HttpServer)
 

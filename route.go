@@ -138,6 +138,7 @@ func (r *route) ServeHTTP(ctx *HttpContext) {
 			ctx.Response().SetStatusCode(http.StatusMethodNotAllowed)
 
 			r.server.JiaWeb.MethodNotAllowedHandler(ctx)
+			return
 
 		}
 	}

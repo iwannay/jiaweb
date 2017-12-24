@@ -64,7 +64,7 @@ func (l *JiaLog) SetEnableLog(isLog bool) {
 }
 
 func (l *JiaLog) SetEnableConsole(isConsole bool) {
-	l.enableConsole = true
+	l.enableConsole = isConsole
 }
 
 func (l *JiaLog) SetLogPath(path string) {

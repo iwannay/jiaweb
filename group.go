@@ -1,8 +1,6 @@
 package jiaweb
 
 import (
-	"fmt"
-
 	"github.com/iwannay/jiaweb/logger"
 )
 
@@ -29,7 +27,6 @@ type (
 
 func NewGroup(prefix string, server *HttpServer) Group {
 	g := &xGroup{prefix: prefix, server: server}
-	fmt.Println(logger.Logger())
 	logger.Logger().Debug("JiaWbe:Gropu NewGroup ["+prefix+"]", LogTarget_HttpServer)
 	return g
 }
