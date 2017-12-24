@@ -106,13 +106,14 @@ func (r *route) ServeHTTP(ctx *HttpContext) {
 			}
 
 			if r.RedirectTrailingSlash {
-				if len(path) > 1 && path[len(path)-1] == '/' {
-					req.URL.Path = path[:len(path)-1]
-				} else {
+				if len(path) > 1 && path[len(path)-1] != '/' {
+					// 	req.URL.Path = path[:len(path)-1]
+					// } else {
 					req.URL.Path = path + "/"
+					http.Redirect(rw, req, req.URL.String(), code)
+					return
 				}
-				http.Redirect(rw, req, req.URL.String(), code)
-				return
+
 			}
 
 			if r.RedirectFixedPath {
