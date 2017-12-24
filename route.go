@@ -2,13 +2,15 @@ package jiaweb
 
 import (
 	"fmt"
-	"log"
 	"net/http"
+	"reflect"
+	"runtime"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/iwannay/jiaweb/base"
 	"github.com/iwannay/jiaweb/logger"
-	"github.com/iwannay/jiaweb/proto"
 	"github.com/iwannay/jiaweb/utils"
 )
 
@@ -30,6 +32,14 @@ type (
 	Router interface {
 		ServeHTTP(ctx *HttpContext)
 		ServerFile(path, fileRoot string) RouteNode
+		RegisterRoute(method string, path string, handle HttpHandle) RouteNode
+		HEAD(path string, handle HttpHandle) RouteNode
+		POST(path string, handle HttpHandle) RouteNode
+		GET(path string, handle HttpHandle) RouteNode
+		PUT(path string, handle HttpHandle) RouteNode
+		DELETE(path string, handle HttpHandle) RouteNode
+		PATCH(path string, handle HttpHandle) RouteNode
+		OPTIONS(path string, handle HttpHandle) RouteNode
 	}
 
 	RouteNode interface {
@@ -84,10 +94,11 @@ func (r *route) ServeHTTP(ctx *HttpContext) {
 	rw := ctx.Response().ResponseWriter()
 	path := req.URL.Path
 	if root := r.NodeMap[req.Method]; root != nil {
-		if handler, params := root.GetValue(path); handler != nil {
-			handler(ctx)
+		if node, handler, params := root.GetValue(path); handler != nil {
 			ctx.params = params
-			// ctx.RouteNode =
+			ctx.routeNode = node
+			handler(ctx)
+			return
 		} else if req.Method != "CONNECT" && path != "/" {
 			code := 301
 			if req.Method != "GET" {
@@ -126,15 +137,14 @@ func (r *route) ServeHTTP(ctx *HttpContext) {
 			ctx.Response().SetHeader("Allow", allow)
 			ctx.Response().SetStatusCode(http.StatusMethodNotAllowed)
 
-			// TODO 设置禁止访问handle
+			r.server.JiaWeb.MethodNotAllowedHandler(ctx)
 
 		}
 	}
 
 	// Handle 404
 	ctx.Response().WriteHeader(http.StatusNotFound)
-
-	// TODO 404 handle
+	r.server.JiaWeb.NotFoundHandler(ctx)
 
 }
 
@@ -156,7 +166,7 @@ func (r *route) allowed(path, reqMethod string) (allow string) {
 			if method == reqMethod || method == "OPTIONS" {
 				continue
 			}
-			h, _ := r.NodeMap[method].GetValue(path)
+			_, h, _ := r.NodeMap[method].GetValue(path)
 			if h != nil {
 				if len(allow) == 0 {
 					allow = method
@@ -191,12 +201,47 @@ func (r *route) wrapRouteHandle(handler HttpHandle, isHijack bool) RouteHandle {
 
 		defer func() {
 			if err := recover(); err != nil {
-				log.Println(err)
+				errMsg := base.FormatError("HttpServer::RouterHandle", LogTarget_HttpServer, err)
+				if r.server.JiaWeb.ExceptionHandler != nil {
+					r.server.JiaWeb.ExceptionHandler(ctx, fmt.Errorf("%v", err))
+				}
+
+				if logger.EnableLog {
+					headinfo := fmt.Sprintln(ctx.Response().Header())
+					logJson := LogJson{
+						RequestUrl: ctx.Request().RequestURI,
+						HttpHeader: headinfo,
+						HttpBody:   errMsg,
+					}
+					logString := utils.GetJsonString(logJson)
+					logger.Logger().Error(logString, LogTarget_HttpServer)
+				}
+
+				base.GlobalState.AddErrorCount(ctx.Request().Path(), fmt.Errorf("%v", err), 1)
+			}
+
+			// TODO Release FeatureTool
+			if ctx.cancel != nil {
+				ctx.cancel()
 			}
 
 		}()
 
 		// do user handle
+		var err error
+		if len(r.server.JiaWeb.Middlewares) > 0 {
+			err = r.server.JiaWeb.Middlewares[0].Handle(ctx)
+		} else {
+			err = handler(ctx)
+		}
+
+		if err != nil {
+			if r.server.JiaWeb.ExceptionHandler != nil {
+				r.server.JiaWeb.ExceptionHandler(ctx, err)
+				base.GlobalState.AddErrorCount(ctx.Request().Path(), err, 1)
+			}
+
+		}
 
 	}
 }
@@ -206,7 +251,7 @@ func (r *route) ServerFile(path string, fileroot string) RouteNode {
 	var root http.FileSystem
 	root = http.Dir(fileroot)
 	if !r.server.ServerConfig().EnableListDir {
-		root = &proto.HideDirFS{root}
+		root = &base.HideDirFS{root}
 	}
 	fileServer := http.FileServer(root)
 	node = r.add(HTTPMethod_GET, path, r.wrapFileHandle(fileServer))
@@ -245,6 +290,81 @@ func (r *route) wrapFileHandle(fHandler http.Handler) RouteHandle {
 	}
 }
 
+func handlerName(h HttpHandle) string {
+	t := reflect.ValueOf(h).Type()
+	if t.Kind() == reflect.Func {
+		return runtime.FuncForPC(reflect.ValueOf(h).Pointer()).Name()
+	}
+	return t.String()
+}
+
+func (r *route) Any(path string, handle HttpHandle) {
+	r.RegisterRoute(HTTPMethod_DELETE, path, handle)
+	r.RegisterRoute(HTTPMethod_GET, path, handle)
+	r.RegisterRoute(HTTPMethod_HEAD, path, handle)
+	r.RegisterRoute(HTTPMethod_OPTIONS, path, handle)
+	r.RegisterRoute(HTTPMethod_PUT, path, handle)
+	r.RegisterRoute(HTTPMethod_POST, path, handle)
+	r.RegisterRoute(HTTPMethod_PATCH, path, handle)
+}
+
+func (r *route) HEAD(path string, handle HttpHandle) RouteNode {
+	return r.RegisterRoute(HTTPMethod_HEAD, path, handle)
+}
+
+func (r *route) OPTIONS(path string, handle HttpHandle) RouteNode {
+	return r.RegisterRoute(HTTPMethod_OPTIONS, path, handle)
+}
+
+func (r *route) POST(path string, handle HttpHandle) RouteNode {
+	return r.RegisterRoute(HTTPMethod_POST, path, handle)
+}
+
+func (r *route) PUT(path string, handle HttpHandle) RouteNode {
+	return r.RegisterRoute(HTTPMethod_PUT, path, handle)
+}
+
+func (r *route) PATCH(path string, handle HttpHandle) RouteNode {
+	return r.RegisterRoute(HTTPMethod_PATCH, path, handle)
+}
+
+func (r *route) DELETE(path string, handle HttpHandle) RouteNode {
+	return r.RegisterRoute(HTTPMethod_DELETE, path, handle)
+}
+
+func (r *route) GET(path string, handle HttpHandle) RouteNode {
+	return r.RegisterRoute(HTTPMethod_GET, path, handle)
+}
+
+func (r *route) RegisterRoute(routeMethod string, path string, handle HttpHandle) RouteNode {
+	var node *Node
+	routeMethod = strings.ToUpper(routeMethod)
+	if _, ok := SupportHTTPMethod[routeMethod]; !ok {
+		logger.Logger().Warn("JiaWeb:Router:Registe failed illegal method "+routeMethod+"["+path+"]", LogTarget_HttpServer)
+
+		return nil
+	} else {
+		logger.Logger().Debug("JiaWbe:Router:RegisterRoute Success "+routeMethod+"["+path+"]", LogTarget_HttpServer)
+	}
+
+	// TODO websocket
+
+	if routeMethod == HTTPMethod_HiJack {
+		r.add(HTTPMethod_GET, path, r.wrapRouteHandle(handle, true))
+	} else {
+		node = r.add(routeMethod, path, r.wrapRouteHandle(handle, false))
+	}
+
+	if r.server.ServerConfig().EnableAutoHEAD {
+		if routeMethod == HTTPMethod_HiJack {
+			r.add(HTTPMethod_HEAD, path, r.wrapRouteHandle(handle, true))
+		} else if routeMethod != HTTPMethod_Any {
+			r.add(HTTPMethod_HEAD, path, r.wrapRouteHandle(handle, false))
+		}
+	}
+	return node
+}
+
 func logRequest(ctx Context, timeTaken int64) string {
 	var reqByteLen, resByteLen, method, proto, status, userip string
 	reqByteLen = utils.Int642String(ctx.Request().ContentLength)
@@ -265,6 +385,7 @@ func logRequest(ctx Context, timeTaken int64) string {
 }
 
 func init() {
+	SupportHTTPMethod = make(map[string]bool)
 	SupportHTTPMethod[HTTPMethod_Any] = true
 	SupportHTTPMethod[HTTPMethod_GET] = true
 	SupportHTTPMethod[HTTPMethod_POST] = true

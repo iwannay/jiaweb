@@ -340,10 +340,12 @@ func (n *Node) getNode(path string) (node *Node, paramsValue map[string]string, 
 
 }
 
-func (n *Node) GetValue(path string) (handle RouteHandle, paramsValue map[string]string) {
+func (n *Node) GetValue(path string) (node *Node, handle RouteHandle, paramsValue map[string]string) {
 	node, params, _ := n.getNode(path)
-
-	return node.hander, params
+	if node != nil {
+		return node, node.hander, params
+	}
+	return nil, nil, nil
 }
 
 func (n *Node) Middleware() []Middleware {

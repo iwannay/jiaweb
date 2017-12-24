@@ -37,7 +37,9 @@ type xMiddleware struct {
 }
 
 func (x *xMiddleware) Handle(ctx Context) error {
-	len := len(ctx.RouteNode().Middlewares())
+
+	n := ctx.RouteNode()
+	len := len(n.Middlewares())
 	if x.IsEnd {
 		return ctx.Handler()(ctx)
 	}

@@ -1,11 +1,15 @@
 package jiaweb
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
+
+	"github.com/iwannay/jiaweb/base"
 )
 
 type (
@@ -18,6 +22,8 @@ type (
 		Hijack() (*HijackConn, error)
 		RemoteIP() string
 		IsHijack() bool
+		End()
+		QueryRouteParam(key string) string
 		WriteJSON(i interface{}) (int, error)
 		WriteJSONAndStatus(status int, i interface{}) (int, error)
 		WriteJSONBlob(b []byte) (int, error)
@@ -25,6 +31,8 @@ type (
 		WriteJSONP(callback string, i interface{}) (int, error)
 		WriteJSONPBlob(callback string, b []byte) (size int, err error)
 
+		WriteHtml(content ...interface{}) (int, error)
+		WriteHtmlAndStatus(status int, content ...interface{}) (int, error)
 		WriteString(content ...interface{}) (int, error)
 		WriteStringAndStatus(status int, content ...interface{}) (int, error)
 		WriteBlob(contentType string, b []byte) (int, error)
@@ -33,6 +41,7 @@ type (
 	HttpContext struct {
 		request     *Request
 		response    *Response
+		cancel      context.CancelFunc
 		httpServer  *HttpServer
 		handler     HttpHandle
 		hiJackConn  *HijackConn
@@ -40,8 +49,10 @@ type (
 		isHijack    bool
 		isWebsocket bool
 		isEnd       bool
+		Store       *base.Store
 		startTime   time.Time
 		params      map[string]string
+		mutex       sync.RWMutex
 	}
 )
 
@@ -51,12 +62,48 @@ func (ctx *HttpContext) reset(r *Request, rw *Response, httpServer *HttpServer) 
 	ctx.isHijack = false
 	ctx.isWebsocket = false
 	ctx.isEnd = false
+	ctx.Store = base.NewStore()
 	ctx.httpServer = httpServer
 	ctx.startTime = time.Now()
 }
 
+func (ctx *HttpContext) release() {
+	ctx.request = nil
+	ctx.response = nil
+	ctx.routeNode = nil
+	ctx.params = nil
+	ctx.hiJackConn = nil
+	ctx.isHijack = false
+	ctx.httpServer = nil
+	ctx.isEnd = false
+	ctx.handler = nil
+	ctx.Store = nil
+	ctx.Store = nil
+	ctx.startTime = time.Time{}
+	ctx.mutex = sync.RWMutex{}
+}
+
+func (ctx *HttpContext) QueryRouteParam(key string) string {
+	ctx.mutex.Lock()
+	val, ok := ctx.params[key]
+	ctx.mutex.Unlock()
+
+	if ok {
+		return val
+	}
+	return ""
+}
+
 func (ctx *HttpContext) Request() *Request {
 	return ctx.request
+}
+
+func (ctx *HttpContext) End() {
+	ctx.isEnd = true
+}
+
+func (ctx *HttpContext) IsEnd() bool {
+	return ctx.isEnd
 }
 
 func (ctx *HttpContext) Response() *Response {
@@ -76,12 +123,21 @@ func (ctx *HttpContext) Handler() HttpHandle {
 }
 
 func (ctx *HttpContext) WriteString(content ...interface{}) (int, error) {
-	return ctx.WriteStringAndStatus(http.StatusOK, content)
+	return ctx.WriteStringAndStatus(http.StatusOK, content...)
 }
 
 func (ctx *HttpContext) WriteStringAndStatus(status int, content ...interface{}) (int, error) {
 	contents := fmt.Sprint(content...)
 	return ctx.WriteBlobAndStatus(status, MIMETextPlainCharsetUTF8, []byte(contents))
+}
+
+func (ctx *HttpContext) WriteHtml(content ...interface{}) (int, error) {
+	return ctx.WriteHtmlAndStatus(http.StatusOK, content...)
+}
+
+func (ctx *HttpContext) WriteHtmlAndStatus(status int, content ...interface{}) (int, error) {
+	contents := fmt.Sprint(content...)
+	return ctx.WriteBlobAndStatus(status, MIMETextHTMLCharsetUTF8, []byte(contents))
 }
 
 func (ctx *HttpContext) WriteBlob(contentType string, b []byte) (int, error) {
@@ -92,6 +148,7 @@ func (ctx *HttpContext) WriteBlobAndStatus(code int, contentType string, b []byt
 	if contentType != "" {
 		ctx.response.SetContentType(contentType)
 	}
+
 	if ctx.IsHijack() {
 		return ctx.hiJackConn.WriteBlob(b)
 	}

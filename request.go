@@ -39,10 +39,24 @@ func (req *Request) Body() []byte {
 	return req.body
 }
 
+func (req *Request) release() {
+	req.Request = nil
+	req.isReadyBody = false
+	req.body = nil
+}
+
 func (req *Request) RemoteIP() string {
 	return req.Request.RemoteAddr
 }
 
 func (req *Request) Url() string {
 	return req.URL.String()
+}
+
+func (req *Request) Path() string {
+	return req.URL.Path
+}
+
+func (req *Request) IsAJAX() bool {
+	return req.Header.Get(HeaderXRequestedWith) == "XMLHttpRequest"
 }

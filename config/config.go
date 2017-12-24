@@ -13,12 +13,19 @@ type (
 		Server *ServerNode
 	}
 	AppNode struct {
-		Version string
-		RunMode string
+		Version     string
+		RunMode     string
+		EnablePProf bool
+		PProfPort   int
+		LogPath     string
+		EnableLog   bool
 	}
 
 	ServerNode struct {
-		EnableListDir bool
+		EnableListDir           bool
+		EnableDetailRequestData bool
+		EnableAutoHEAD          bool
+		EnableIgnoreFavicon     bool
 	}
 )
 
@@ -28,7 +35,10 @@ const (
 )
 
 func New() *Config {
-	return &Config{}
+	return &Config{
+		App:    &AppNode{},
+		Server: &ServerNode{},
+	}
 }
 
 func InitConfig(configFile string, configType string) (config *Config, err error) {

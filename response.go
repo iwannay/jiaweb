@@ -60,6 +60,7 @@ func (r *Response) release() {
 	r.Status = http.StatusOK
 	r.Size = 0
 	r.committed = false
+	r.body = []byte{}
 }
 
 func (r *Response) Header() http.Header {
@@ -109,4 +110,8 @@ func (r *Response) WriteHeader(code int) error {
 
 func (r *Response) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	return r.rw.(http.Hijacker).Hijack()
+}
+
+func (r *Response) HttpStatus() int {
+	return r.Status
 }
