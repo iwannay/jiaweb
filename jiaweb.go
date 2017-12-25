@@ -7,10 +7,12 @@ import (
 	"runtime/debug"
 	"runtime/pprof"
 	"strconv"
+	"strings"
 	"sync"
 
-	"github.com/iwannay/jiaweb/base"
 	"github.com/iwannay/jiaweb/config"
+
+	"github.com/iwannay/jiaweb/base"
 	"github.com/iwannay/jiaweb/logger"
 	"github.com/iwannay/jiaweb/utils"
 )
@@ -34,17 +36,33 @@ type (
 	HttpHandle     func(httpCtx Context) error
 )
 
+var appConfig *config.Config
+
 const (
 	DefaultHTTPPort    = 8080
 	RunModeDevelopment = "development"
 	RunModeProduction  = "production"
 )
 
+func LoadConfig(configFile, configType string) {
+	var err error
+	appConfig, err = config.InitConfig(configFile, configType)
+	if err != nil {
+		appConfig = config.New()
+	}
+
+}
+
 func New() *JiaWeb {
 	logger.InitJiaLog()
+	printLogo()
+	if appConfig == nil {
+		appConfig = config.New()
+	}
+
 	app := &JiaWeb{
 		HttpServer:  NewHttpServer(),
-		Config:      config.New(),
+		Config:      appConfig,
 		Middlewares: make([]Middleware, 0),
 	}
 	app.HttpServer.SetJiaWeb(app)
@@ -54,10 +72,8 @@ func New() *JiaWeb {
 
 func Classic() *JiaWeb {
 	app := New()
-
 	app.SetEnableLog(true)
 	app.UseRequestLog()
-
 	logger.Logger().Debug("JiaWeb start New AppServer", LogTarget_HttpServer)
 
 	return app
@@ -157,7 +173,7 @@ func (app *JiaWeb) initRegisterGroup() {
 
 func (app *JiaWeb) initInnnerRouter() {
 	inner := app.HttpServer.Group("/jiaweb")
-	inner.GET("/debug/pprof/<key:.*>", initPProf)
+	inner.GET("/debug/pprof/<key:.+>", initPProf)
 	inner.GET("/debug/freemery", freeMemory)
 	inner.GET("/debug/state", showServerState)
 	inner.GET("/debug/query/<key:[^/]*>", showQuery)
@@ -257,7 +273,13 @@ func (app *JiaWeb) DefaultMethodNotAllowedHandler(ctx Context) {
 func initPProf(ctx Context) error {
 	querykey := ctx.QueryRouteParam("key")
 	runtime.GC()
-	pprof.Lookup(querykey).WriteTo(ctx.Response().ResponseWriter(), 1)
+	p := pprof.Lookup(querykey)
+	if p != nil {
+		p.WriteTo(ctx.Response().ResponseWriter(), 1)
+	} else {
+		ctx.WriteString("pprof can not found key=>" + querykey)
+	}
+
 	return nil
 }
 
@@ -298,4 +320,30 @@ func showQuery(ctx Context) error {
 		ctx.WriteString("not support key =>" + queryKey)
 	}
 	return nil
+}
+
+func printLogo() {
+
+	str := `                                                         
+         ;;.  .:.            ;;.     ;;.    .;;            !OC        
+        ;MM: .NM7            NMC    >MM!    QMC            CM&        
+        !MM. ;NN-            HMC    HMM!   :MM;            HM?        
+        ?MH                  QMO   >MNM>   &MC            .MM!        
+        &MO  :7!   ;>?C7-    &MO   HMOM7  -MM;   .>?C>.   :MM;-?C7;   
+        NM>  QMC  :MMNMMM!   OM&  !MCCM?  OMC   >MMNMMH.  7MNOMMMMN-  
+       ;MM-  MM>  ;:. .&MQ   CMQ  QM;CM? ;MM;  ?MQ; .HM7  OMM&-.!MM&  
+       !MM. -MM-       ?MH   ?MQ !MC ?MC CMC  -MN.   ?MO  HM&    OMN  
+       ?MQ  >MM.  .7&NMMM&   7MQ QM; 7MO;MM;  OMN&&&&NMC .MM!    ?MN  
+       QMC  CM&  !NMO7!NM7   >MH:MO  >MO?MC   NMQ&&&&&&: :MM;    OM&  
+      .MM!  QM? ;MM!  .MM:   !MH&M;  >MONM;  .MM:        7MN    .MM>  
+      CMN. .MM! >MN   >MM.   :MNMO   !MNM?    NM?        OMM;  .&MH.  
+  !CCQMM:  -MM; >MM?>CMMH    -MMM-   :MMM;    7MM&7>?O   NMNN??HMN;   
+  QMMM&-   >MN  .OMMMO7M&    ;MMO    -MM?      7NMMMM&  ;MH-HMMMC.   
+`
+
+	LogMsg := strings.Split(str, "\n")
+
+	for _, v := range LogMsg {
+		logger.Logger().Print(v, LogTarget_HttpServer)
+	}
 }

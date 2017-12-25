@@ -9,8 +9,9 @@ import (
 
 type (
 	Config struct {
-		App    *AppNode
-		Server *ServerNode
+		App      *AppNode
+		Server   *ServerNode
+		Template *TemplateNode
 	}
 	AppNode struct {
 		Version     string
@@ -27,6 +28,11 @@ type (
 		EnableAutoHEAD          bool
 		EnableIgnoreFavicon     bool
 	}
+
+	TemplateNode struct {
+		TplDir string
+		TplExt string
+	}
 )
 
 const (
@@ -36,8 +42,9 @@ const (
 
 func New() *Config {
 	return &Config{
-		App:    &AppNode{},
-		Server: &ServerNode{},
+		App:      &AppNode{},
+		Server:   &ServerNode{},
+		Template: &TemplateNode{},
 	}
 }
 

@@ -49,7 +49,7 @@ var (
 	jiaLog JiaLogger
 
 	EnableLog      bool = false
-	EnableConsole  bool = false
+	EnableConsole  bool = true
 	DefaultLogPath string
 )
 

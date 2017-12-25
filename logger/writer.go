@@ -71,6 +71,8 @@ func (w *writer) handleWrite() {
 
 		if !chanLog.isRaw {
 			log = fmt.Sprintf(fmt.Sprintf("[%s] %s [%s:%v] %s", chanLog.LogLevel, time.Now().Format(defaultFullTimeLayout), chanLog.logCtx.fileName, chanLog.logCtx.line, chanLog.Content))
+		} else {
+			log = chanLog.Content
 		}
 		if w.jiaLog.enableConsole {
 			fmt.Println(log)

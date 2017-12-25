@@ -20,6 +20,7 @@ type (
 		route     Router
 		JiaWeb    *JiaWeb
 		Modules   []*HttpModule
+		Render    Viewer
 		// modelView *view.ModelView
 		end bool
 	}
@@ -64,6 +65,7 @@ func NewHttpServer() *HttpServer {
 		Handler: s,
 	}
 	s.route = NewRoute(s)
+	s.Render = NewView(s)
 
 	return s
 }
@@ -137,6 +139,10 @@ func (s *HttpServer) Route() Router {
 
 func (s *HttpServer) ServerConfig() *config.ServerNode {
 	return s.JiaWeb.Config.Server
+}
+
+func (s *HttpServer) TemplateConfig() *config.TemplateNode {
+	return s.JiaWeb.Config.Template
 }
 
 func (s *HttpServer) Group(prefix string) Group {

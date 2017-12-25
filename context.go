@@ -24,6 +24,8 @@ type (
 		IsHijack() bool
 		End()
 		QueryRouteParam(key string) string
+		RenderHtml(viewPath []string, locals map[string]interface{}) error
+
 		WriteJSON(i interface{}) (int, error)
 		WriteJSONAndStatus(status int, i interface{}) (int, error)
 		WriteJSONBlob(b []byte) (int, error)
@@ -92,6 +94,10 @@ func (ctx *HttpContext) QueryRouteParam(key string) string {
 		return val
 	}
 	return ""
+}
+
+func (ctx *HttpContext) RenderHtml(viewPath []string, locals map[string]interface{}) error {
+	return ctx.httpServer.Render.RenderHtml(ctx.response, viewPath, locals)
 }
 
 func (ctx *HttpContext) Request() *Request {

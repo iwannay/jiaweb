@@ -104,6 +104,8 @@ walk:
 			child := *n
 			child.Path = child.Path[i:]
 			n.Path = path[:i]
+			n.middleware = []Middleware{}
+			n.hander = nil
 
 			// 检查新父节点是否包含参数
 			if has, reg, params := parseParam(n.Path); has {
