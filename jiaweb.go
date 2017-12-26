@@ -55,7 +55,6 @@ func LoadConfig(configFile, configType string) {
 
 func New() *JiaWeb {
 	logger.InitJiaLog()
-	printLogo()
 	if appConfig == nil {
 		appConfig = config.New()
 	}
@@ -75,6 +74,7 @@ func Classic() *JiaWeb {
 	app.SetEnableLog(true)
 	app.UseRequestLog()
 	logger.Logger().Debug("JiaWeb start New AppServer", LogTarget_HttpServer)
+	printLogo()
 
 	return app
 

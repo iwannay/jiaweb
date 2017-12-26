@@ -12,6 +12,7 @@ type (
 		AppendTpl(tpl ...string)
 		AppendFunc(funcMap template.FuncMap)
 		RenderHtml(rw *Response, viewPath []string, locals map[string]interface{}) error
+		AddLocals(val KValue)
 		Tpls() []string
 	}
 
@@ -19,8 +20,13 @@ type (
 		funcMap  template.FuncMap
 		innerTpl []string
 		server   *HttpServer
-		locals   map[string]interface{}
+		locals   []KValue
 		// mutex    sync.RWMutex
+	}
+
+	KValue struct {
+		Key   string
+		Value interface{}
 	}
 )
 
@@ -33,6 +39,10 @@ func NewView(s *HttpServer) *view {
 
 func (v *view) Tpls() []string {
 	return v.innerTpl
+}
+
+func (v *view) AddLocals(val KValue) {
+	v.locals = append(v.locals, val)
 }
 
 func (v *view) AppendTpl(tpl ...string) {
@@ -63,8 +73,8 @@ func (v *view) RenderHtml(rw *Response, viewPath []string, locals map[string]int
 		locals = make(map[string]interface{})
 
 	}
-	for index, item := range v.locals {
-		locals[index] = item
+	for _, item := range v.locals {
+		locals[item.Key] = item.Value
 	}
 
 	t := template.Must(template.New(tplName).Funcs(v.funcMap).ParseFiles(tplPaths...))

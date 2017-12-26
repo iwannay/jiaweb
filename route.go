@@ -3,6 +3,7 @@ package jiaweb
 import (
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"reflect"
 	"runtime"
 	"strings"
@@ -105,7 +106,8 @@ func (r *route) ServeHTTP(ctx *HttpContext) {
 				code = 307
 			}
 
-			if r.RedirectTrailingSlash {
+			if r.RedirectTrailingSlash && filepath.Ext(path) == "" {
+
 				if len(path) > 1 && path[len(path)-1] != '/' {
 					// 	req.URL.Path = path[:len(path)-1]
 					// } else {
@@ -287,7 +289,6 @@ func (r *route) wrapFileHandle(fHandler http.Handler) RouteHandle {
 
 		fHandler.ServeHTTP(httpCtx.Response().rw, httpCtx.Request().Request)
 		timeTaken := int64(time.Now().Sub(startTime) / time.Millisecond)
-
 		logger.Logger().Debug(httpCtx.Request().Url()+" "+logRequest(httpCtx, timeTaken), LogTarget_HttpRequest)
 	}
 }
