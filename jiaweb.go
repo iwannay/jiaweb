@@ -21,6 +21,7 @@ type (
 	JiaWeb struct {
 		HttpServer              *HttpServer
 		Config                  *config.Config
+		Logger                  logger.JiaLogger
 		Middlewares             []Middleware
 		ExceptionHandler        ExceptionHandle
 		NotFoundHandler         StandardHandle
@@ -54,7 +55,7 @@ func LoadConfig(configFile, configType string) {
 }
 
 func New() *JiaWeb {
-	logger.InitJiaLog()
+
 	if appConfig == nil {
 		appConfig = config.New()
 	}
@@ -74,7 +75,6 @@ func Classic() *JiaWeb {
 	app.SetEnableLog(true)
 	app.UseRequestLog()
 	logger.Logger().Debug("JiaWeb start New AppServer", LogTarget_HttpServer)
-	printLogo()
 
 	return app
 
@@ -180,7 +180,10 @@ func (app *JiaWeb) initInnnerRouter() {
 }
 
 func (app *JiaWeb) init() {
+	logger.InitJiaLog()
+	app.Logger = logger.Logger()
 	app.initAppConfig()
+	printLogo()
 	app.initRegisterMiddleware()
 	app.initRegisterRoute()
 	app.initRegisterGroup()

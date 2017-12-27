@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/dgrijalva/jwt-go"
+
 	"github.com/iwannay/jiaweb/base"
 )
 
@@ -39,6 +41,10 @@ type (
 		WriteStringAndStatus(status int, content ...interface{}) (int, error)
 		WriteBlob(contentType string, b []byte) (int, error)
 		WriteBlobAndStatus(status int, contentType string, b []byte) (int, error)
+
+		GenerateToken(v jwt.MapClaims)
+		GenerateSeesionToken(v jwt.MapClaims)
+		VerifyToken(v *map[string]interface{}) bool
 	}
 	HttpContext struct {
 		request     *Request
@@ -238,4 +244,15 @@ func (ctx *HttpContext) Hijack() (*HijackConn, error) {
 
 func (ctx *HttpContext) RemoteIP() string {
 	return ctx.Request().RemoteIP()
+}
+
+func (ctx *HttpContext) GenerateToken(v jwt.MapClaims) {
+	ctx.HttpServer().Jwt.GenerateToken(ctx.Response().ResponseWriter(), v)
+}
+func (ctx *HttpContext) GenerateSeesionToken(v jwt.MapClaims) {
+	ctx.HttpServer().Jwt.GenerateSeesionToken(ctx.Response().ResponseWriter(), v)
+}
+func (ctx *HttpContext) VerifyToken(v *map[string]interface{}) bool {
+
+	return ctx.HttpServer().Jwt.VerifyToken(ctx.Request().Request, v)
 }

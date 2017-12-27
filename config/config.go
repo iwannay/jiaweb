@@ -12,6 +12,7 @@ type (
 		App      *AppNode
 		Server   *ServerNode
 		Template *TemplateNode
+		Jwt      *JwtNode
 	}
 	AppNode struct {
 		Version     string
@@ -32,6 +33,14 @@ type (
 	TemplateNode struct {
 		TplDir string
 		TplExt string
+	}
+
+	JwtNode struct {
+		Expire       int64
+		Name         string
+		EnableJwt    bool
+		CookieMaxAge int64
+		SignKey      string
 	}
 )
 

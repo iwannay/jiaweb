@@ -19,6 +19,7 @@ type (
 		pool      *pool
 		route     Router
 		JiaWeb    *JiaWeb
+		Jwt       *base.MJwt
 		Modules   []*HttpModule
 		Render    Viewer
 		// modelView *view.ModelView
@@ -110,7 +111,21 @@ func (s *HttpServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	httpctx.release()
 	s.pool.context.Put(httpctx)
+}
 
+func (s *HttpServer) SetEnableJwt() {
+	if jwtConf := s.JwtConfig(); jwtConf != nil {
+		jwtConf.EnableJwt = true
+		logger.Logger().Debug("JiaWeb:HttpServer SetJwtConfig enable jwt", LogTarget_HttpServer)
+		s.Jwt = base.NewJwt(jwtConf.Expire, jwtConf.Name, []byte(jwtConf.SignKey), jwtConf.CookieMaxAge)
+		return
+	}
+
+	logger.Logger().Debug("JiaWeb:HttpServer SetJwtConfig failed config nil", LogTarget_HttpServer)
+}
+
+func (s *HttpServer) JwtConfig() *config.JwtNode {
+	return s.JiaWeb.Config.Jwt
 }
 
 func (s *HttpServer) SetEnableIgnoreFavicon(enable bool) {
