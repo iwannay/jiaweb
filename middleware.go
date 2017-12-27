@@ -46,16 +46,14 @@ func (x *xMiddleware) Handle(ctx Context) error {
 	if x.next == nil {
 		if len == 0 {
 			return ctx.Handler()(ctx)
-		} else {
-			if reflect.TypeOf(ctx.RouteNode().Middlewares()[len-1]).String() != "*jiaweb.xMiddleware" {
-				ctx.RouteNode().Use(&xMiddleware{IsEnd: true})
-			}
-			return ctx.RouteNode().Middlewares()[0].Handle(ctx)
 		}
+		if reflect.TypeOf(ctx.RouteNode().Middlewares()[len-1]).String() != "*jiaweb.xMiddleware" {
+			ctx.RouteNode().Use(&xMiddleware{IsEnd: true})
+		}
+		return ctx.RouteNode().Middlewares()[0].Handle(ctx)
 
-	} else {
-		return x.Next(ctx)
 	}
+	return x.Next(ctx)
 
 }
 
