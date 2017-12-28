@@ -25,6 +25,7 @@ type (
 		RemoteIP() string
 		IsHijack() bool
 		End()
+		NotFound()
 		QueryRouteParam(key string) string
 		RenderHtml(viewPath []string, locals map[string]interface{}) error
 
@@ -90,6 +91,10 @@ func (ctx *HttpContext) release() {
 	ctx.Store = nil
 	ctx.startTime = time.Time{}
 	ctx.mutex = sync.RWMutex{}
+}
+
+func (ctx *HttpContext) NotFound() {
+	ctx.httpServer.JiaWeb.NotFoundHandler(ctx)
 }
 
 func (ctx *HttpContext) QueryRouteParam(key string) string {
@@ -196,12 +201,17 @@ func (ctx *HttpContext) WriteJSONBlobAndStatus(status int, b []byte) (int, error
 }
 
 func (ctx *HttpContext) WriteJSONP(callback string, i interface{}) (int, error) {
-	b, err := json.Marshal(i)
-	if err != nil {
-		return 0, err
+	if callback != "" {
+		b, err := json.Marshal(i)
+		if err != nil {
+			return 0, err
+		}
+
+		return ctx.WriteJSONPBlob(callback, b)
+	} else {
+		return ctx.WriteJSON(i)
 	}
 
-	return ctx.WriteJSONPBlob(callback, b)
 }
 
 func (ctx *HttpContext) WriteJSONPBlob(callback string, b []byte) (size int, err error) {
