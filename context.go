@@ -44,6 +44,7 @@ type (
 
 		GenerateToken(v jwt.MapClaims)
 		GenerateSeesionToken(v jwt.MapClaims)
+		CostTime() string
 		VerifyToken(v *map[string]interface{}) bool
 	}
 	HttpContext struct {
@@ -100,6 +101,11 @@ func (ctx *HttpContext) QueryRouteParam(key string) string {
 		return val
 	}
 	return ""
+}
+
+func (ctx *HttpContext) CostTime() string {
+	dur := time.Now().Sub(ctx.startTime)
+	return fmt.Sprintf("%.3f ms", float64(dur.Nanoseconds())/float64(1000000))
 }
 
 func (ctx *HttpContext) RenderHtml(viewPath []string, locals map[string]interface{}) error {
