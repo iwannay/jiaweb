@@ -12,7 +12,7 @@ type (
 		AppendTpl(tpl ...string)
 		AppendFunc(funcMap template.FuncMap)
 		RenderHtml(rw *Response, viewPath []string, locals map[string]interface{}) error
-		AddLocals(val KValue)
+		AddLocals(val ...KValue)
 		Tpls() []string
 	}
 
@@ -41,8 +41,8 @@ func (v *view) Tpls() []string {
 	return v.innerTpl
 }
 
-func (v *view) AddLocals(val KValue) {
-	v.locals = append(v.locals, val)
+func (v *view) AddLocals(val ...KValue) {
+	v.locals = append(v.locals, val...)
 }
 
 func (v *view) AppendTpl(tpl ...string) {

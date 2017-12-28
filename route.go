@@ -36,6 +36,8 @@ type (
 		RegisterRoute(method string, path string, handle HttpHandle) RouteNode
 		HEAD(path string, handle HttpHandle) RouteNode
 		POST(path string, handle HttpHandle) RouteNode
+		GETPOST(path string, handle HttpHandle)
+		Any(path string, handle HttpHandle)
 		GET(path string, handle HttpHandle) RouteNode
 		PUT(path string, handle HttpHandle) RouteNode
 		DELETE(path string, handle HttpHandle) RouteNode
@@ -321,6 +323,11 @@ func (r *route) OPTIONS(path string, handle HttpHandle) RouteNode {
 
 func (r *route) POST(path string, handle HttpHandle) RouteNode {
 	return r.RegisterRoute(HTTPMethod_POST, path, handle)
+}
+
+func (r *route) GETPOST(path string, handle HttpHandle) {
+	r.RegisterRoute(HTTPMethod_POST, path, handle)
+	r.RegisterRoute(HTTPMethod_GET, path, handle)
 }
 
 func (r *route) PUT(path string, handle HttpHandle) RouteNode {
