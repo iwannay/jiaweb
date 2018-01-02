@@ -170,7 +170,7 @@ func (s *State) ShowData(dataType string) string {
 
 	if dataType == "json" {
 		var dataMap = make(map[string]interface{})
-		dataMap["EnableDetailRequestData"] = s.ServerStartTime.Format(dateTimeLayout)
+		dataMap["ServerStartTime"] = s.ServerStartTime.Format(dateTimeLayout)
 		dataMap["TotalRequestCount"] = strconv.FormatUint(s.TotalRequestCount, 10)
 		dataMap["TotalErrorCount"] = strconv.FormatUint(s.TotalErrorCount, 10)
 		dataMap["IntervalRequestData"] = s.IntervalRequestData.All()

@@ -72,7 +72,6 @@ func New() *JiaWeb {
 
 func Classic() *JiaWeb {
 	app := New()
-	app.SetEnableLog(true)
 	app.UseRequestLog()
 	logger.Logger().Debug("JiaWeb start New AppServer", LogTarget_HttpServer)
 
@@ -254,6 +253,7 @@ func (app *JiaWeb) SetDevelopmentMode() {
 
 func (app *JiaWeb) SetProductionMode() {
 	app.Config.App.RunMode = RunModeProduction
+	app.SetEnableLog(true)
 	logger.SetEnableConsole(false)
 }
 

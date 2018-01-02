@@ -51,7 +51,9 @@ const (
 
 func New() *Config {
 	return &Config{
-		App:      &AppNode{},
+		App: &AppNode{
+			EnableLog: false,
+		},
 		Server:   &ServerNode{},
 		Template: &TemplateNode{},
 	}

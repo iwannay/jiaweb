@@ -67,7 +67,6 @@ func (w *writer) handleWrite() {
 
 	for {
 		chanLog = <-w.writeChan
-		logPath = w.jiaLog.logPath + chanLog.LogTarget
 
 		if !chanLog.isRaw {
 			log = fmt.Sprintf(fmt.Sprintf("[%s] %s [%s:%v] %s", chanLog.LogLevel, time.Now().Format(defaultFullTimeLayout), chanLog.logCtx.fileName, chanLog.logCtx.line, chanLog.Content))
@@ -78,6 +77,7 @@ func (w *writer) handleWrite() {
 			fmt.Println(log)
 		}
 		if w.jiaLog.enableLog {
+			logPath = w.jiaLog.logPath + chanLog.LogTarget
 			w.writeFile(logPath+"_"+time.Now().Format(defaultDateFormatForFileName)+".log", log)
 		}
 
