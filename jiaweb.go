@@ -130,6 +130,10 @@ func (app *JiaWeb) UseRequestLog() {
 	app.Use(&RequestLogMiddleware{})
 }
 
+func (app *JiaWeb) SetEnableDetailRequestData(enable bool) {
+	base.GlobalState.EnableDetailRequestData = enable
+}
+
 func (app *JiaWeb) StartServer(port int) error {
 	addr := ":" + strconv.Itoa(port)
 	return app.ListenAndServe(addr)
@@ -307,7 +311,8 @@ func showIntervalData(ctx Context) error {
 }
 
 func showServerState(ctx Context) error {
-	ctx.WriteHtml(base.GlobalState.ShowHtmlData())
+	dataType := ctx.Request().FormValue("type")
+	ctx.WriteHtml(base.GlobalState.ShowData(dataType))
 	return nil
 }
 

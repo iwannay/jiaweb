@@ -14,10 +14,11 @@ func NewStore() *Store {
 	return &Store{}
 }
 
-func (s *Store) All() map[interface{}]interface{} {
-	data := make(map[interface{}]interface{})
+func (s *Store) All() map[string]interface{} {
+	data := make(map[string]interface{})
 	s.Range(func(key, value interface{}) bool {
-		data[key] = value
+
+		data[key.(string)] = value
 		return true
 	})
 	return data

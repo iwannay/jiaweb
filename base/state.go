@@ -166,7 +166,22 @@ func (s *State) handleInfo() {
 	}
 }
 
-func (s *State) ShowHtmlData() string {
+func (s *State) ShowData(dataType string) string {
+
+	if dataType == "json" {
+		var dataMap = make(map[string]interface{})
+		dataMap["EnableDetailRequestData"] = s.ServerStartTime.Format(dateTimeLayout)
+		dataMap["TotalRequestCount"] = strconv.FormatUint(s.TotalRequestCount, 10)
+		dataMap["TotalErrorCount"] = strconv.FormatUint(s.TotalErrorCount, 10)
+		dataMap["IntervalRequestData"] = s.IntervalRequestData.All()
+		dataMap["DetailRequestUrlData"] = s.DetailRequstURLData.All()
+		dataMap["IntervalErrorData"] = s.IntervalErrorData.All()
+		dataMap["DetailErrorPageData"] = s.DetailErrorPageData.All()
+		dataMap["DetailErrorData"] = s.DetailErrorData.All()
+		dataMap["DetailHttpCodeData"] = s.DetailHTTPCodeData.All()
+		return utils.GetJsonString(dataMap)
+	}
+
 	data := "<html><body><div>"
 	data += "ServerStartTime : " + s.ServerStartTime.Format(dateTimeLayout)
 	data += "<br>"
@@ -174,7 +189,6 @@ func (s *State) ShowHtmlData() string {
 	data += "<br>"
 	data += "TotalErrorCount : " + strconv.FormatUint(s.TotalErrorCount, 10)
 	data += "<br>"
-
 	data += "IntervalRequestData : " + utils.GetJsonString(s.IntervalRequestData.All())
 	data += "<br>"
 
