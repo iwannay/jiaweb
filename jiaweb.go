@@ -177,7 +177,7 @@ func (app *JiaWeb) initRegisterGroup() {
 func (app *JiaWeb) initInnnerRouter() {
 	inner := app.HttpServer.Group("/jiaweb")
 	inner.GET("/debug/pprof/<key:.+>", initPProf)
-	inner.GET("/debug/freemery", freeMemory)
+	inner.GET("/debug/freememory", freeMemory)
 	inner.GET("/debug/state", showServerState)
 	inner.GET("/debug/query/<key:[^/]*>", showQuery)
 }

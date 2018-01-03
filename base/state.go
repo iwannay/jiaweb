@@ -82,13 +82,13 @@ func (s *State) AddRequestCount(page string, code int, num uint64) uint64 {
 		s.addRequestData(page, code, num)
 		s.AddHTTPCodeData(page, code, num)
 	}
-	return s.TotalRequestCount
+	return atomic.LoadUint64(&s.TotalRequestCount)
 }
 
 func (s *State) AddErrorCount(page string, err error, num uint64) uint64 {
 	atomic.AddUint64(&s.TotalErrorCount, num)
 	s.addErrorData(page, err, num)
-	return s.TotalErrorCount
+	return atomic.LoadUint64(&s.TotalErrorCount)
 }
 
 func (s *State) addRequestData(page string, code int, num uint64) {
