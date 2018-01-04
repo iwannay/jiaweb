@@ -19,6 +19,7 @@ type (
 		HttpServer() *HttpServer
 		Response() *Response
 		Request() *Request
+		Store() *base.Store
 		RouteNode() RouteNode
 		Handler() HttpHandle
 		Hijack() (*HijackConn, error)
@@ -47,6 +48,7 @@ type (
 		GenerateSeesionToken(v jwt.MapClaims)
 		CostTime() string
 		VerifyToken(v *map[string]interface{}) bool
+		Redirect(url string, code int)
 	}
 	HttpContext struct {
 		request     *Request
@@ -59,7 +61,7 @@ type (
 		isHijack    bool
 		isWebsocket bool
 		isEnd       bool
-		Store       *base.Store
+		store       *base.Store
 		startTime   time.Time
 		params      map[string]string
 		mutex       sync.RWMutex
@@ -72,7 +74,7 @@ func (ctx *HttpContext) reset(r *Request, rw *Response, httpServer *HttpServer) 
 	ctx.isHijack = false
 	ctx.isWebsocket = false
 	ctx.isEnd = false
-	ctx.Store = base.NewStore()
+	ctx.store = base.NewStore()
 	ctx.httpServer = httpServer
 	ctx.startTime = time.Now()
 }
@@ -87,14 +89,21 @@ func (ctx *HttpContext) release() {
 	ctx.httpServer = nil
 	ctx.isEnd = false
 	ctx.handler = nil
-	ctx.Store = nil
-	ctx.Store = nil
+	ctx.store = nil
 	ctx.startTime = time.Time{}
 	ctx.mutex = sync.RWMutex{}
 }
 
 func (ctx *HttpContext) NotFound() {
 	ctx.httpServer.JiaWeb.NotFoundHandler(ctx)
+}
+
+func (ctx *HttpContext) Store() *base.Store {
+	return ctx.store
+}
+
+func (ctx *HttpContext) Redirect(url string, code int) {
+	http.Redirect(ctx.Response().ResponseWriter(), ctx.Request().Request, url, code)
 }
 
 func (ctx *HttpContext) QueryRouteParam(key string) string {
