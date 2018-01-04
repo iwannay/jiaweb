@@ -46,7 +46,14 @@ func (v *view) AddLocals(val ...KValue) {
 }
 
 func (v *view) AppendTpl(tpl ...string) {
-	v.innerTpl = append(v.innerTpl, tpl...)
+	var tplPaths []string
+	var tplPath string
+	for _, item := range tpl {
+		tplPath = filepath.Join(".", v.server.TemplateConfig().TplDir, item+v.server.TemplateConfig().TplExt)
+		tplPaths = append(tplPaths, tplPath)
+	}
+
+	v.innerTpl = append(v.innerTpl, tplPaths...)
 }
 
 func (v *view) AppendFunc(funcMap template.FuncMap) {
@@ -81,7 +88,7 @@ func (v *view) RenderHtml(rw *Response, viewPath []string, locals map[string]int
 
 	subTime := time.Now().Sub(startTime).Nanoseconds()
 
-	locals["costTime"] = fmt.Sprintf("%.5fms", subTime)
+	locals["costTime"] = fmt.Sprintf("%.5fms", float64(subTime))
 	err := t.ExecuteTemplate(rw.ResponseWriter(), tplName, locals)
 	return err
 }
