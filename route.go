@@ -93,6 +93,7 @@ func (r *route) GetHandler(name string) (HttpHandle, bool) {
 }
 
 func (r *route) ServeHTTP(ctx *HttpContext) {
+
 	req := ctx.Request().Request
 	rw := ctx.Response().ResponseWriter()
 	path := req.URL.Path
@@ -265,7 +266,7 @@ func (r *route) ServerFile(path string, fileroot string) RouteNode {
 }
 
 func (r *route) add(method, path string, handle RouteHandle, m ...Middleware) *Node {
-	if path[0] != '/' {
+	if path == "" || path[0] != '/' {
 		panic("path must begin with '/' in path '" + path + "'")
 	}
 
@@ -275,7 +276,7 @@ func (r *route) add(method, path string, handle RouteHandle, m ...Middleware) *N
 
 	root := r.NodeMap[method]
 	if root == nil {
-		root = &Node{}
+		root = NewTree()
 		r.NodeMap[method] = root
 	}
 
