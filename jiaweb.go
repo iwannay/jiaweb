@@ -3,6 +3,7 @@ package jiaweb
 import (
 	"fmt"
 	"net/http"
+	_ "net/http/pprof"
 	"runtime"
 	"runtime/debug"
 	"runtime/pprof"
@@ -54,7 +55,7 @@ func LoadConfig(configFile, configType string) {
 
 }
 
-func New() *JiaWeb {
+func New(fn func(app *JiaWeb)) *JiaWeb {
 
 	if appConfig == nil {
 		appConfig = config.New()
@@ -66,12 +67,15 @@ func New() *JiaWeb {
 		Middlewares: make([]Middleware, 0),
 	}
 	app.HttpServer.SetJiaWeb(app)
+	if fn != nil {
+		fn(app)
+	}
 	app.init()
 	return app
 }
 
-func Classic() *JiaWeb {
-	app := New()
+func Classic(fn func(app *JiaWeb)) *JiaWeb {
+	app := New(fn)
 	app.UseRequestLog()
 	logger.Logger().Debug("JiaWeb start New AppServer", LogTarget_HttpServer)
 
@@ -183,7 +187,6 @@ func (app *JiaWeb) initInnnerRouter() {
 }
 
 func (app *JiaWeb) init() {
-	logger.InitJiaLog()
 	app.Logger = logger.Logger()
 	app.initAppConfig()
 	printLogo()
@@ -354,4 +357,8 @@ func printLogo() {
 	for _, v := range LogMsg {
 		logger.Logger().Print(v, LogTarget_HttpServer)
 	}
+}
+
+func init() {
+	logger.InitJiaLog()
 }

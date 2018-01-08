@@ -254,14 +254,14 @@ func (r *route) wrapRouteHandle(handler HttpHandle, isHijack bool) RouteHandle {
 }
 
 func (r *route) ServerFile(path string, fileroot string) RouteNode {
-	node := &Node{}
 	var root http.FileSystem
 	root = http.Dir(fileroot)
 	if !r.server.ServerConfig().EnableListDir {
 		root = &base.HideDirFS{root}
 	}
 	fileServer := http.FileServer(root)
-	node = r.add(HTTPMethod_GET, path, r.wrapFileHandle(fileServer))
+	fileServer = http.StripPrefix("/static/", fileServer)
+	node := r.add(HTTPMethod_GET, path, r.wrapFileHandle(fileServer))
 	return node
 }
 
@@ -289,7 +289,6 @@ func (r *route) wrapFileHandle(fHandler http.Handler) RouteHandle {
 	return func(httpCtx *HttpContext) {
 		startTime := time.Now()
 		// TODO not supprot read dir by params
-
 		fHandler.ServeHTTP(httpCtx.Response().rw, httpCtx.Request().Request)
 		timeTaken := int64(time.Now().Sub(startTime) / time.Millisecond)
 		logger.Logger().Debug(httpCtx.Request().Url()+" "+logRequest(httpCtx, timeTaken), LogTarget_HttpRequest)
@@ -354,9 +353,8 @@ func (r *route) RegisterRoute(routeMethod string, path string, handle HttpHandle
 		logger.Logger().Warn("JiaWeb:Router:Registe failed illegal method "+routeMethod+"["+path+"]", LogTarget_HttpServer)
 
 		return nil
-	} else {
-		logger.Logger().Debug("JiaWbe:Router:RegisterRoute Success "+routeMethod+"["+path+"]", LogTarget_HttpServer)
 	}
+	logger.Logger().Debug("JiaWbe:Router:RegisterRoute Success "+routeMethod+"["+path+"]", LogTarget_HttpServer)
 
 	// TODO websocket
 
