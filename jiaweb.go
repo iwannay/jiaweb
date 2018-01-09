@@ -67,10 +67,7 @@ func New(fn func(app *JiaWeb)) *JiaWeb {
 		Middlewares: make([]Middleware, 0),
 	}
 	app.HttpServer.SetJiaWeb(app)
-	if fn != nil {
-		fn(app)
-	}
-	app.init()
+	app.init(fn)
 	return app
 }
 
@@ -186,9 +183,12 @@ func (app *JiaWeb) initInnnerRouter() {
 	inner.GET("/debug/query/<key:[^/]*>", showQuery)
 }
 
-func (app *JiaWeb) init() {
+func (app *JiaWeb) init(fn func(app *JiaWeb)) {
 	app.Logger = logger.Logger()
 	app.initAppConfig()
+	if fn != nil {
+		fn(app)
+	}
 	printLogo()
 	app.initRegisterMiddleware()
 	app.initRegisterRoute()
