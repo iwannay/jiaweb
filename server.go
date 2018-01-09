@@ -116,7 +116,10 @@ func (s *HttpServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 func (s *HttpServer) SetEnableJwt() {
 	if jwtConf := s.JwtConfig(); jwtConf != nil {
 		jwtConf.EnableJwt = true
-		logger.Logger().Debug("JiaWeb:HttpServer SetJwtConfig enable jwt", LogTarget_HttpServer)
+		logger.Logger().Debug(
+			fmt.Sprintf(
+				"JiaWeb:HttpServer SetJwtConfig expire:%d name:%s cookieMaxAge:%d",
+				jwtConf.Expire, jwtConf.Name, jwtConf.CookieMaxAge), LogTarget_HttpServer)
 		s.Jwt = base.NewJwt(jwtConf.Expire, jwtConf.Name, []byte(jwtConf.SignKey), jwtConf.CookieMaxAge)
 		return
 	}
