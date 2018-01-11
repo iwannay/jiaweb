@@ -45,6 +45,7 @@ type (
 		WriteBlobAndStatus(status int, contentType string, b []byte) (int, error)
 
 		GenerateToken(v jwt.MapClaims)
+		CleanToken()
 		GenerateSeesionToken(v jwt.MapClaims)
 		CostTime() string
 		VerifyToken(v *map[string]interface{}) bool
@@ -274,6 +275,11 @@ func (ctx *HttpContext) RemoteIP() string {
 func (ctx *HttpContext) GenerateToken(v jwt.MapClaims) {
 	ctx.HttpServer().Jwt.GenerateToken(ctx.Response().ResponseWriter(), v)
 }
+
+func (ctx *HttpContext) CleanToken() {
+	ctx.HttpServer().Jwt.CleanCookie(ctx.Response().ResponseWriter())
+}
+
 func (ctx *HttpContext) GenerateSeesionToken(v jwt.MapClaims) {
 	ctx.HttpServer().Jwt.GenerateSeesionToken(ctx.Response().ResponseWriter(), v)
 }

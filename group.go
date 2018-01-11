@@ -10,6 +10,7 @@ type (
 		Group(prefix string, m ...Middleware) Group
 		DELETE(path string, h HttpHandle) RouteNode
 		GET(path string, h HttpHandle) RouteNode
+		GETPOST(path string, h HttpHandle)
 		HEAD(path string, h HttpHandle) RouteNode
 		OPTIONS(path string, h HttpHandle) RouteNode
 		PATCH(path string, h HttpHandle) RouteNode
@@ -50,6 +51,11 @@ func (g *xGroup) GET(path string, h HttpHandle) RouteNode {
 func (g *xGroup) POST(path string, h HttpHandle) RouteNode {
 	return g.add(HTTPMethod_POST, path, h)
 }
+func (g *xGroup) GETPOST(path string, h HttpHandle) {
+	g.add(HTTPMethod_POST, path, h)
+	g.add(HTTPMethod_GET, path, h)
+}
+
 func (g *xGroup) PUST(path string, h HttpHandle) RouteNode {
 	return g.add(HTTPMethod_DELETE, path, h)
 }
