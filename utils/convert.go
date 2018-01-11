@@ -26,9 +26,18 @@ func Struct2Map(obj interface{}) map[string]interface{} {
 }
 
 func Interface2Struct(in interface{}, out interface{}) error {
-	byteData, err := json.Marshal(in)
-	if err != nil {
-		return err
+	var byteData []byte
+	var err error
+	t := reflect.TypeOf(in)
+
+	if t.Kind() == reflect.Map {
+		byteData, err = json.Marshal(in)
+		if err != nil {
+			return err
+		}
+	} else {
+		byteData = in.([]byte)
 	}
+
 	return json.Unmarshal(byteData, out)
 }
