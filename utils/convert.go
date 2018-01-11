@@ -28,7 +28,7 @@ func Struct2Map(obj interface{}) map[string]interface{} {
 
 func Map2Struct(m map[string]interface{}, v interface{}) error {
 	for k, v := range m {
-		structValue := reflect.ValueOf(m).Elem()
+		structValue := reflect.ValueOf(v).Elem()
 		structFieldValue := structValue.FieldByName(k)
 
 		if !structFieldValue.IsValid() {
