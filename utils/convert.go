@@ -1,8 +1,7 @@
 package utils
 
 import (
-	"errors"
-	"fmt"
+	"encoding/json"
 	"reflect"
 	"strconv"
 )
@@ -26,28 +25,10 @@ func Struct2Map(obj interface{}) map[string]interface{} {
 	return data
 }
 
-func Map2Struct(m map[string]interface{}, obj interface{}) error {
-	for k, v := range m {
-		structValue := reflect.ValueOf(obj).Elem()
-		structFieldValue := structValue.FieldByName(k)
-
-		if !structFieldValue.IsValid() {
-			return fmt.Errorf("No such field: %s in obj", k)
-		}
-
-		if !structFieldValue.CanSet() {
-			return fmt.Errorf("Cannot set %s field value", k)
-		}
-
-		structFieldType := structFieldValue.Type()
-		val := reflect.ValueOf(v)
-		if structFieldType != val.Type() {
-			return errors.New("Provided value type didn't match obj field type")
-		}
-
-		structFieldValue.Set(val)
-
+func Interface2Struct(in interface{}, out interface{}) error {
+	byteData, err := json.Marshal(in)
+	if err != nil {
+		return err
 	}
-
-	return nil
+	return json.Unmarshal(byteData, out)
 }
