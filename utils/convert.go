@@ -14,15 +14,13 @@ func String2Int64(val string) (int64, error) {
 	return strconv.ParseInt(val, 10, 64)
 }
 
-func Struct2Map(obj interface{}) map[string]interface{} {
-	t := reflect.TypeOf(obj)
-	v := reflect.ValueOf(obj)
-
-	var data = make(map[string]interface{})
-	for i := 0; i < t.NumField(); i++ {
-		data[t.Field(i).Name] = v.Field(i).Interface()
+func Struct2Map(obj interface{}, out *map[string]interface{}) error {
+	b, err := json.Marshal(obj)
+	if err != nil {
+		return err
 	}
-	return data
+	return json.Unmarshal(b, out)
+
 }
 
 func Interface2Struct(in interface{}, out interface{}) error {
