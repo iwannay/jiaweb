@@ -12,8 +12,9 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
-func NewJwt(expire int64, tokenName string, signKey []byte, maxAge int64) *MJwt {
+func NewJwt(domain string, expire int64, tokenName string, signKey []byte, maxAge int64) *MJwt {
 	return &MJwt{
+		Domain:       domain,
 		Expire:       expire,
 		Name:         tokenName,
 		SignKey:      signKey,
@@ -23,6 +24,7 @@ func NewJwt(expire int64, tokenName string, signKey []byte, maxAge int64) *MJwt 
 
 // json web token
 type MJwt struct {
+	Domain       string
 	Expire       int64
 	Name         string
 	SignKey      []byte
@@ -79,6 +81,7 @@ func (j *MJwt) GenerateToken(rw http.ResponseWriter, mapClaims jwt.MapClaims) {
 	tokenString := j.tokenString(mapClaims)
 
 	http.SetCookie(rw, &http.Cookie{
+		Domain:   j.Domain,
 		Name:     j.Name,
 		HttpOnly: true,
 		Path:     "/",
@@ -91,6 +94,7 @@ func (j *MJwt) GenerateSeesionToken(rw http.ResponseWriter, mapClaims jwt.MapCla
 	tokenString := j.tokenString(mapClaims)
 	http.SetCookie(rw, &http.Cookie{
 		Name:     j.Name,
+		Domain:   j.Domain,
 		HttpOnly: true,
 		Path:     "/",
 		Value:    url.QueryEscape(tokenString),
@@ -99,6 +103,7 @@ func (j *MJwt) GenerateSeesionToken(rw http.ResponseWriter, mapClaims jwt.MapCla
 
 func (j *MJwt) CleanCookie(rw http.ResponseWriter) {
 	http.SetCookie(rw, &http.Cookie{
+		Domain:   j.Domain,
 		Name:     j.Name,
 		HttpOnly: true,
 		Path:     "/",

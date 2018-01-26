@@ -16,6 +16,7 @@ type (
 	}
 	AppNode struct {
 		Version     string
+		Domain      string
 		RunMode     string
 		EnablePProf bool
 		PProfPort   int
@@ -36,6 +37,7 @@ type (
 	}
 
 	JwtNode struct {
+		Domain       string
 		Expire       int64
 		Name         string
 		EnableJwt    bool
