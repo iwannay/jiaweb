@@ -120,7 +120,7 @@ func (s *HttpServer) SetEnableJwt() {
 			fmt.Sprintf(
 				"JiaWeb:HttpServer SetJwtConfig expire:%d name:%s cookieMaxAge:%d",
 				jwtConf.Expire, jwtConf.Name, jwtConf.CookieMaxAge), LogTarget_HttpServer)
-		s.Jwt = base.NewJwt(jwtConf.Expire, jwtConf.Name, []byte(jwtConf.SignKey), jwtConf.CookieMaxAge)
+		s.Jwt = base.NewJwt(jwtConf.Domain, jwtConf.Expire, jwtConf.Name, []byte(jwtConf.SignKey), jwtConf.CookieMaxAge)
 		return
 	}
 
