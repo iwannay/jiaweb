@@ -178,7 +178,14 @@ func (r *route) allowed(path, reqMethod string) (allow string) {
 			if method == reqMethod || method == "OPTIONS" {
 				continue
 			}
-
+			_, h, _ := r.NodeMap[method].GetValue(path)
+			if h != nil {
+				if len(allow) == 0 {
+					allow = method
+				} else {
+					allow += ", " + method
+				}
+			}
 		}
 	}
 
