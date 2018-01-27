@@ -112,8 +112,6 @@ func (r *route) ServeHTTP(ctx *HttpContext) {
 			if r.RedirectTrailingSlash && filepath.Ext(path) == "" {
 
 				if len(path) > 1 && path[len(path)-1] != '/' {
-					// 	req.URL.Path = path[:len(path)-1]
-					// } else {
 					req.URL.Path = path + "/"
 					http.Redirect(rw, req, req.URL.String(), code)
 					return
@@ -135,6 +133,13 @@ func (r *route) ServeHTTP(ctx *HttpContext) {
 				rw.Header().Set("Allow", allow)
 				return
 			}
+			if r.RedirectTrailingSlash && filepath.Ext(path) == "" {
+				if allow := r.allowed(path+"/", req.Method); len(allow) > 0 {
+					rw.Header().Set("Allow", allow)
+					return
+				}
+			}
+
 		}
 	} else {
 		// 405
