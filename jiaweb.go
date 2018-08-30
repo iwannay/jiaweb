@@ -41,7 +41,7 @@ type (
 var appConfig *config.Config
 
 const (
-	DefaultHTTPPort    = 8000
+	DefaultHTTPPort    = 8080
 	RunModeDevelopment = "development"
 	RunModeProduction  = "production"
 )
